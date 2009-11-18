@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 79;
+use Test::More tests => 85;
 
 use Mojo::ByteStream 'b';
 
@@ -26,6 +26,12 @@ TODO: {
     $array = $json->decode('[0]');
     is_deeply($array, [0], 'decode [0]');
 }
+$array = $json->decode('[0.0]');
+isa_ok($array, 'ARRAY', 'decode [0.0]');
+cmp_ok($array->[0], '==', 0, 'decode [0.0]');
+$array = $json->decode('[0e0]');
+isa_ok($array, 'ARRAY', 'decode [0e0]');
+cmp_ok($array->[0], '==', 0, 'decode [0e0]');
 $array = $json->decode('[1]');
 is_deeply($array, [1]);
 $array = $json->decode('[ -122.026020 ]');
@@ -36,6 +42,9 @@ $array = $json->decode('[10e12 , [2 ]]');
 is_deeply($array, ['10e12', [2]]);
 $array = $json->decode('[37.7668 , [ 20 ]] ');
 is_deeply($array, [37.7668, [20]]);
+$array = $json->decode('[1e3]');
+isa_ok($array, 'ARRAY', 'decode [1e3]');
+cmp_ok($array->[0], '==', 1e3, 'decode [1e3]');
 
 # Decode name
 $array = $json->decode('[true]');
