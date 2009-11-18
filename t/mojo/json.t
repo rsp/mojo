@@ -21,11 +21,8 @@ $array = $json->decode('[ [ ]]');
 is_deeply($array, [[]]);
 
 # Decode number
-TODO: {
-    local $TODO = "0 doesn't work";
-    $array = $json->decode('[0]');
-    is_deeply($array, [0], 'decode [0]');
-}
+$array = $json->decode('[0]');
+is_deeply($array, [0], 'decode [0]');
 $array = $json->decode('[0.0]');
 isa_ok($array, 'ARRAY', 'decode [0.0]');
 cmp_ok($array->[0], '==', 0, 'decode [0.0]');
@@ -55,18 +52,12 @@ $array = $json->decode('[true, false]');
 is_deeply($array, ['\1', undef]);
 
 # Decode string
-TODO: {
-    local $TODO = "empty string doesn't work";
-    $array = $json->decode('[""]');
-    is_deeply($array, [''], 'decode [""]');
-}
+$array = $json->decode('[""]');
+is_deeply($array, [''], 'decode [""]');
 $array = $json->decode('[" "]');
 is_deeply($array, [' '], 'decode [" "]');
-TODO: {
-    local $TODO = "string \"0\" doesn't work";
-    $array = $json->decode('["0"]');
-    is_deeply($array, ['0'], 'decode ["0"]');
-}
+$array = $json->decode('["0"]');
+is_deeply($array, ['0'], 'decode ["0"]');
 $array = $json->decode('["0."]');
 is_deeply($array, ['0.'], 'decode ["0."]');
 $array = $json->decode('[" 0"]');
