@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 74;
+use Test::More tests => 79;
 
 use Mojo::ByteStream 'b';
 
@@ -51,6 +51,19 @@ TODO: {
     $array = $json->decode('[""]');
     is_deeply($array, [''], 'decode [""]');
 }
+$array = $json->decode('[" "]');
+is_deeply($array, [' '], 'decode [" "]');
+TODO: {
+    local $TODO = "string \"0\" doesn't work";
+    $array = $json->decode('["0"]');
+    is_deeply($array, ['0'], 'decode ["0"]');
+}
+$array = $json->decode('["0."]');
+is_deeply($array, ['0.'], 'decode ["0."]');
+$array = $json->decode('[" 0"]');
+is_deeply($array, [' 0'], 'decode [" 0"]');
+$array = $json->decode('["1"]');
+is_deeply($array, ['1'], 'decode ["1"]');
 $array = $json->decode('["hello world!"]');
 is_deeply($array, ['hello world!']);
 $array = $json->decode('["hello\nworld!"]');
