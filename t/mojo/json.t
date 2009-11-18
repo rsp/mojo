@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 85;
+use Test::More tests => 86;
 
 use Mojo::ByteStream 'b';
 
@@ -129,6 +129,8 @@ $string = $json->encode(["hello\t\"world!"]);
 is($string, '["hello\t\"world!"]');
 $string = $json->encode(["hello\x{0003}\x{0152}world\x{0152}!"]);
 is(b($string)->decode('UTF-8'), "[\"hello\\u0003\x{0152}world\x{0152}!\"]");
+$string = $json->encode(["123abc"]);
+is($string, '["123abc"]', 'encoding ["123abc"]');
 
 # Encode object
 $string = $json->encode({});
