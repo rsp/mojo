@@ -72,18 +72,27 @@ my $REVERSE_ESCAPE = {};
 for my $key (keys %$ESCAPE) { $REVERSE_ESCAPE->{$ESCAPE->{$key}} = $key }
 
 # Byte order marks
-my $BOM = {
-    "\357\273\277" => 'UTF-8',
-    "\376\377"     => 'UTF-16BE',
-    "\377\376"     => 'UTF-16LE',
-    "\377\376\0\0" => 'UTF-32LE',
-    "\0\0\376\377" => 'UTF-32BE'
+my $BOM_RE = qr/
+    (?:
+    \357\273\277   # UTF-8
+    |
+    \377\376\0\0   # UTF-32LE
+    |
+    \0\0\376\377   # UTF-32BE
+    |
+    \376\377       # UTF-16BE
+    |
+    \377\376       # UTF-16LE
+    )
+/x;
+
+# Unicode encoding detection
+my $UTF_PATTERNS = {
+    "\0\0\0[^\0]"    => 'UTF-32BE',
+    "\0[^\0]\0[^\0]" => 'UTF-16BE',
+    "[^\0]\0\0\0"    => 'UTF-32LE',
+    "[^\0]\0[^\0]\0" => 'UTF-16LE'
 };
-my $BOM_RE;
-{
-    my $bom = join '|', reverse sort keys %$BOM;
-    $BOM_RE = qr/^($bom)/;
-}
 
 # Hey...That's not the wallet inspector...
 sub decode {
@@ -95,9 +104,17 @@ sub decode {
     # Cleanup
     $self->error(undef);
 
+    # Remove BOM
+    $string =~ s/$BOM_RE//g;
+
     # Detect and decode unicode
     my $encoding = 'UTF-8';
-    if ($string =~ s/$BOM_RE//) { $encoding = $BOM->{$1} }
+    for my $pattern (keys %$UTF_PATTERNS) {
+        if ($string =~ /^$pattern/) {
+            $encoding = $UTF_PATTERNS->{$pattern};
+            last;
+        }
+    }
     $string = b($string)->decode($encoding)->to_string;
 
     # Decode
