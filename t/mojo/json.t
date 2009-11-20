@@ -5,14 +5,15 @@
 use strict;
 use warnings;
 
-use Test::More tests => 88;
+use Test::More tests => 97;
 
 use Mojo::ByteStream 'b';
 
 # We should be safe up here. I'm pretty sure fires can't climb trees.
-use_ok('Mojo::JSON');
+BEGIN { use_ok('Mojo::JSON'); }
 
 my $json = Mojo::JSON->new;
+isa_ok($json, 'Mojo::JSON');
 
 # Decode array
 my $array = $json->decode('[]');
@@ -219,3 +220,29 @@ is($json->decode('false'),  undef);
 is($json->error,      'JSON text has to be a serialized object or array.');
 is($json->decode(''), undef);
 is($json->error,      'JSON text has to be a serialized object or array.');
+
+# Experimental Mojo::JSON::Bool
+BEGIN { use_ok('Mojo::JSON', qw(:bool)); }
+
+$json = Mojo::JSON->new({ bool => 1 });
+isa_ok($json, 'Mojo::JSON');
+
+# Encode name
+$string = $json->encode([ true, false, undef ]);
+is($string, '[true,false,null]');
+
+# Decode name
+$array = $json->decode('[ null, false, true ]');
+is_deeply($array, [ undef, false, true ]);
+
+# Roundtrip
+$string = '[null,false,true,"",0,1,"0 but true"]';
+$array = $json->decode($string);
+isa_ok($array, 'ARRAY');
+is($json->encode($array), $string);
+
+# Roudtrip
+$array = [undef, 0, 1, '0 but true', '', true, false];
+$string = $json->encode($array);
+ok($string);
+is_deeply($json->decode($string), $array);

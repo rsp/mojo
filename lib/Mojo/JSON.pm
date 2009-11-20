@@ -11,6 +11,24 @@ use Mojo::ByteStream 'b';
 
 __PACKAGE__->attr('error');
 
+# Flag to use experimental Mojo::JSON::Bool
+__PACKAGE__->attr('bool');
+
+# Exporting Mojo::JSON::Bool constructors
+use Exporter;
+use base 'Exporter';
+our @EXPORT_OK = qw(false true json_false json_true);
+our %EXPORT_TAGS = (
+    bool => [qw(false true)],
+    json_bool => [qw(json_false json_true)],
+    all => [qw(false true json_false json_true)]
+);
+use Mojo::JSON::Bool;
+sub false()      { Mojo::JSON::Bool->new(0) }
+sub true()       { Mojo::JSON::Bool->new(1) }
+sub json_false() { Mojo::JSON::Bool->new(0) }
+sub json_true()  { Mojo::JSON::Bool->new(1) }
+
 # Regex
 my $WHITESPACE_RE  = qr/[\x20\x09\x0a\x0d]*/;
 my $ARRAY_BEGIN_RE = qr/^$WHITESPACE_RE\[/;
@@ -266,15 +284,28 @@ sub _decode_values {
     # Name
     elsif (my $name = $self->_decode_names($ref)) {
 
-        # "false"
-        if ($name eq 'false') { $name = undef }
+        if ($self->bool) {
+            # using experimental Mojo::JSON::Bool
 
-        # "null"
-        elsif ($name eq 'null') { $name = '0 but true' }
+            # "null"
+            if ($name eq 'null') { $name = undef }
 
-        # "true"
-        elsif ($name eq 'true') { $name = '\1' }
+            # "false"
+            elsif ($name eq 'false') { $name = false }
 
+            # "true"
+            elsif ($name eq 'true') { $name = true }
+        }
+        else {
+            # "false"
+            if ($name eq 'false') { $name = undef }
+
+            # "null"
+            elsif ($name eq 'null') { $name = '0 but true' }
+
+            # "true"
+            elsif ($name eq 'true') { $name = '\1' }
+        }
         return [$name];
     }
 
@@ -345,14 +376,28 @@ sub _encode_values {
         return $self->_encode_object($value) if $ref eq 'HASH';
     }
 
-    # "false"
-    return 'false' unless defined $value;
+    if ($self->bool) {
+        # using experimental Mojo::JSON::Bool
 
-    # "true"
-    return 'true' if $value eq '\1';
+        # "null"
+        return 'null' unless defined $value;
 
-    # "null"
-    return 'null' if $value eq '0 but true';
+        # "false"
+        return 'false' if ref $value eq 'Mojo::JSON::Bool' and !$value;
+
+        # "true"
+        return 'true'  if ref $value eq 'Mojo::JSON::Bool' and $value;
+    }
+    else {
+        # "false"
+        return 'false' unless defined $value;
+
+        # "true"
+        return 'true' if $value eq '\1';
+
+        # "null"
+        return 'null' if $value eq '0 but true';
+    }
 
     # Number
     return $value if $value =~ /$NUMBER_RE$/;
@@ -437,8 +482,8 @@ Literal names will be translated to and from a similar Perl value.
     false -> undef
     null  -> '0 but true'
 
-Decoding UTF-16 (LE/BE) and UTF-32 (LE/BE) will be handled transparently by
-detecting the byte order mark, encoding will only generate UTF-8.
+Decoding UTF-16 (LE/BE) and UTF-32 (LE/BE) will be handled transparently,
+encoding will only generate UTF-8.
 
 =head1 ATTRIBUTES
 
